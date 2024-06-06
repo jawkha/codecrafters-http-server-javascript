@@ -11,4 +11,9 @@ const server = net.createServer((socket) => {
 	})
 })
 
+server.on('connection', (socket) => {
+	socket.write('HTTP/1.1 200 OK\r\n\r\n')
+	socket.end()
+})
+
 server.listen(4221, 'localhost')
