@@ -4,7 +4,7 @@ const net = require('net')
 console.log('Logs from your program will appear here!')
 
 function createResponse({ verb, resource, protocol }) {
-	if (resource === '/index.html') {
+	if (resource === '/') {
 		return `HTTP/1.1 200 OK\r\n\r\n`
 	} else {
 		return `HTTP/1.1 404 Not Found\r\n\r\n`
