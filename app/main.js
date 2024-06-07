@@ -37,7 +37,7 @@ function createResponse({ verb, resource, protocol, headers }) {
 				return `HTTP/1.1 404 Not Found\r\n\r\n`
 			} else {
 				const file = fs.readFileSync(`${fileStorage}${fileName}`)
-				const headers = `application/octet-stream\r\nContent-Length: ${file.length}\r\n`
+				const headers = `Content-Type: application/octet-stream\r\nContent-Length: ${file.length}\r\n`
 				return `HTTP/1.1 200 OK\r\n${headers}\r\n${file}`
 			}
 		}
