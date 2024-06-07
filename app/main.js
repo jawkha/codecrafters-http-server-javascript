@@ -1,4 +1,5 @@
 const net = require('net')
+const fs = require('fs')
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log('Logs from your program will appear here!')
@@ -21,6 +22,18 @@ function createResponse({ verb, resource, protocol, headers }) {
 		const str = resource.split('/')[2]
 		const headers = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
 		return `HTTP/1.1 200 OK\r\n${headers}\r\n${str}`
+	} else if (resource.startsWith('/files')) {
+		const fileName = resource.split('/')[2]
+		if (fileName) {
+			const fileExists = fs.existsSync(`/tmp/${fileName}`)
+			if (!fileExists) {
+				return `HTTP/1.1 404 Not Found\r\n\r\n`
+			} else {
+				const file = fs.readFileSync(`/tmp/${fileName}`)
+				const headers = `application/octet-stream\r\nContent-Length: ${file.length}\r\n`
+				return `HTTP/1.1 200 OK\r\n${headers}\r\n${file}`
+			}
+		}
 	} else {
 		return `HTTP/1.1 404 Not Found\r\n\r\n`
 	}
