@@ -20,29 +20,41 @@ function parseRequestHeaders(httpHeadersAndRequestBody) {
 	return headers
 }
 
-function createResponse({ verb, resource, protocol, headers }) {
-	if (resource === '/') {
-		return `HTTP/1.1 200 OK\r\n\r\n`
-	} else if (resource.toLowerCase() === '/user-agent') {
-		return `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${headers['user-agent'].length}\r\n\r\n${headers['user-agent']}`
-	} else if (resource.startsWith('/echo')) {
-		const str = resource.split('/')[2]
-		const headers = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
-		return `HTTP/1.1 200 OK\r\n${headers}\r\n${str}`
-	} else if (resource.startsWith('/files')) {
-		const fileName = resource.split('/')[2]
-		if (fileName) {
-			const fileExists = fs.existsSync(`${fileStorage}${fileName}`)
-			if (!fileExists) {
-				return `HTTP/1.1 404 Not Found\r\n\r\n`
-			} else {
-				const file = fs.readFileSync(`${fileStorage}${fileName}`)
-				const headers = `Content-Type: application/octet-stream\r\nContent-Length: ${file.length}\r\n`
-				return `HTTP/1.1 200 OK\r\n${headers}\r\n${file}`
+function createResponse({ verb, resource, protocol, headers, body }) {
+	if (verb.trim().toLowerCase() === 'get') {
+		if (resource === '/') {
+			return `HTTP/1.1 200 OK\r\n\r\n`
+		} else if (resource.toLowerCase() === '/user-agent') {
+			return `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${headers['user-agent'].length}\r\n\r\n${headers['user-agent']}`
+		} else if (resource.startsWith('/echo')) {
+			const str = resource.split('/')[2]
+			const headers = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
+			return `HTTP/1.1 200 OK\r\n${headers}\r\n${str}`
+		} else if (resource.startsWith('/files')) {
+			const fileName = resource.split('/')[2]
+			if (fileName) {
+				const fileExists = fs.existsSync(`${fileStorage}${fileName}`)
+				if (!fileExists) {
+					return `HTTP/1.1 404 Not Found\r\n\r\n`
+				} else {
+					const file = fs.readFileSync(`${fileStorage}${fileName}`)
+					const headers = `Content-Type: application/octet-stream\r\nContent-Length: ${file.length}\r\n`
+					return `HTTP/1.1 200 OK\r\n${headers}\r\n${file}`
+				}
+			}
+		} else {
+			return `HTTP/1.1 404 Not Found\r\n\r\n`
+		}
+	} else if (verb.trim().toLowerCase() === 'post') {
+		if (resource.startsWith('/files')) {
+			const fileName = resource.split('/')[2]
+			if (fileName) {
+				const file = fs.createWriteStream(`${fileStorage}${fileName}`)
+				file.write(body)
+				file.end()
+				return `HTTP/1.1 201 Created\r\n\r\n`
 			}
 		}
-	} else {
-		return `HTTP/1.1 404 Not Found\r\n\r\n`
 	}
 }
 
@@ -58,7 +70,8 @@ const server = net.createServer({ keepAlive: true }, (socket) => {
 		const [httpStartLine, ...httpHeadersAndRequestBody] = request.split('\r\n')
 		const headers = parseRequestHeaders(httpHeadersAndRequestBody)
 		const [verb, resource, protocol] = httpStartLine.split(' ')
-		const response = createResponse({ verb, resource, protocol, headers })
+		const body = httpHeadersAndRequestBody[httpHeadersAndRequestBody.length - 1]
+		const response = createResponse({ verb, resource, protocol, headers, body })
 		sendResponse(socket, response)
 	})
 
