@@ -3,9 +3,20 @@ const net = require('net')
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log('Logs from your program will appear here!')
 
-function createResponse({ verb, resource, protocol }) {
+function parseRequestHeaders(httpHeadersAndRequestBody) {
+	const headers = {}
+	for (const header of httpHeadersAndRequestBody) {
+		const [key, value] = header?.trim().split(': ')
+		headers[key?.toLowerCase()] = value
+	}
+	return headers
+}
+
+function createResponse({ verb, resource, protocol, headers }) {
 	if (resource === '/') {
 		return `HTTP/1.1 200 OK\r\n\r\n`
+	} else if (resource.toLowerCase() === '/user-agent') {
+		return `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${headers['user-agent'].length}\r\n\r\n${headers['user-agent']}`
 	} else if (resource.startsWith('/echo')) {
 		const str = resource.split('/')[2]
 		const headers = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
@@ -24,9 +35,10 @@ function sendResponse(socket, response) {
 const server = net.createServer({ keepAlive: true }, (socket) => {
 	socket.on('data', (data) => {
 		const request = data.toString()
-		const [header, ...body] = request.split('\r\n')
-		const [verb, resource, protocol] = header.split(' ')
-		const response = createResponse({ verb, resource, protocol })
+		const [httpStartLine, ...httpHeadersAndRequestBody] = request.split('\r\n')
+		const headers = parseRequestHeaders(httpHeadersAndRequestBody)
+		const [verb, resource, protocol] = httpStartLine.split(' ')
+		const response = createResponse({ verb, resource, protocol, headers })
 		sendResponse(socket, response)
 	})
 
