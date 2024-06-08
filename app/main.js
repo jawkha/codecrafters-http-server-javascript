@@ -15,7 +15,7 @@ function parseRequestHeaders(httpHeadersAndRequestBody) {
 	const headers = {}
 	for (const header of httpHeadersAndRequestBody) {
 		const [key, value] = header?.trim().split(': ')
-		headers[key?.toLowerCase()] = value
+		headers[key?.toLowerCase()] = value?.toLowerCase()
 	}
 	return headers
 }
@@ -29,7 +29,8 @@ function createResponse({ verb, resource, protocol, headers, body }) {
 		} else if (resource.startsWith('/echo')) {
 			const str = resource.split('/')[2]
 			if (
-				headers['accept-encoding'] === 'gzip' ||
+				headers.hasOwnProperty('accept-encoding') &&
+				// headers['accept-encoding'] === 'gzip') ||
 				headers['accept-encoding'].split(',').includes('gzip')
 			) {
 				const responseHeaders = `HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
