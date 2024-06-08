@@ -1,6 +1,7 @@
 const net = require('net')
 const fs = require('fs')
 const process = require('process')
+const zlib = require('zlib')
 
 let fileStorage = './files/'
 
@@ -14,7 +15,7 @@ console.log('Logs from your program will appear here!')
 function parseRequestHeaders(httpHeadersAndRequestBody) {
 	const headers = {}
 	for (const header of httpHeadersAndRequestBody) {
-		const [key, value] = header?.trim().split(': ')
+		const [key, value] = header?.trim().split(':')
 		headers[key?.toLowerCase()] = value?.toLowerCase()
 	}
 	console.log({ headers })
@@ -38,8 +39,10 @@ function createResponse({ verb, resource, protocol, headers, body }) {
 					.map((el) => el.trim())
 					.includes('gzip')
 			) {
-				const responseHeaders = `HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
-				return `${responseHeaders}\r\n${str}`
+				const gzippedResponse = zlib.gzipSync(str)
+				// console.log({ gzippedResponse })
+				const responseHeaders = `HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: ${gzippedResponse.length}\r\n`
+				return `${responseHeaders}\r\n${gzippedResponse}`
 			} else {
 				const responseHeaders = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
 				return `HTTP/1.1 200 OK\r\n${responseHeaders}\r\n${str}`
