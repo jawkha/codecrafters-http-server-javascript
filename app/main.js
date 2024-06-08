@@ -28,8 +28,13 @@ function createResponse({ verb, resource, protocol, headers, body }) {
 			return `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${headers['user-agent'].length}\r\n\r\n${headers['user-agent']}`
 		} else if (resource.startsWith('/echo')) {
 			const str = resource.split('/')[2]
-			const headers = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
-			return `HTTP/1.1 200 OK\r\n${headers}\r\n${str}`
+			if (headers['accept-encoding'] === 'gzip') {
+				const responseHeaders = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${str.length}\r\nContent-Encoding: gzip\r\n`
+				return `${responseHeaders}\r\n${str}`
+			} else {
+				const headers = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
+				return `HTTP/1.1 200 OK\r\n${headers}\r\n${str}`
+			}
 		} else if (resource.startsWith('/files')) {
 			const fileName = resource.split('/')[2]
 			if (fileName) {
