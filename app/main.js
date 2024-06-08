@@ -15,10 +15,9 @@ console.log('Logs from your program will appear here!')
 function parseRequestHeaders(httpHeadersAndRequestBody) {
 	const headers = {}
 	for (const header of httpHeadersAndRequestBody) {
-		const [key, value] = header?.trim().split(':')
+		const [key, value] = header?.trim().split(': ')
 		headers[key?.toLowerCase()] = value?.toLowerCase()
 	}
-	console.log({ headers })
 	return headers
 }
 
@@ -33,19 +32,20 @@ function createResponse({ verb, resource, protocol, headers, body }) {
 
 			if (
 				headers.hasOwnProperty('accept-encoding') &&
-				// headers['accept-encoding'] === 'gzip') ||
 				headers['accept-encoding']
 					.split(',')
 					.map((el) => el.trim())
 					.includes('gzip')
 			) {
 				const gzippedResponse = zlib.gzipSync(str)
-				// console.log({ gzippedResponse })
-				const responseHeaders = `HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: ${gzippedResponse.length}\r\n`
-				return `${responseHeaders}\r\n${gzippedResponse}`
+				const responseHeaders = `Content-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: ${gzippedResponse.length}\r\n`
+				return Buffer.concat([
+					Buffer.from(`HTTP/1.1 200 OK\r\n${responseHeaders}\r\n`),
+					gzippedResponse,
+				])
 			} else {
 				const responseHeaders = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
-				return `HTTP/1.1 200 OK\r\n${responseHeaders}\r\n${str}`
+				return Buffer.from(`HTTP/1.1 200 OK\r\n${responseHeaders}\r\n${str}`)
 			}
 		} else if (resource.startsWith('/files')) {
 			const fileName = resource.split('/')[2]
@@ -55,8 +55,11 @@ function createResponse({ verb, resource, protocol, headers, body }) {
 					return `HTTP/1.1 404 Not Found\r\n\r\n`
 				} else {
 					const file = fs.readFileSync(`${fileStorage}${fileName}`)
-					const headers = `Content-Type: application/octet-stream\r\nContent-Length: ${file.length}\r\n`
-					return `HTTP/1.1 200 OK\r\n${headers}\r\n${file}`
+					const responseHeaders = `Content-Type: application/octet-stream\r\nContent-Length: ${file.length}\r\n`
+					return Buffer.concat([
+						Buffer.from(`HTTP/1.1 200 OK\r\n${responseHeaders}\r\n`),
+						file,
+					])
 				}
 			}
 		} else {
