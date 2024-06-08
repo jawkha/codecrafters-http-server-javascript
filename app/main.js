@@ -32,7 +32,7 @@ function createResponse({ verb, resource, protocol, headers, body }) {
 				headers['accept-encoding'] === 'gzip' ||
 				headers['accept-encoding'].split(',').includes('gzip')
 			) {
-				const responseHeaders = `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${str.length}\r\nContent-Encoding: gzip\r\n`
+				const responseHeaders = `HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
 				return `${responseHeaders}\r\n${str}`
 			} else {
 				const headers = `Content-Type: text/plain\r\nContent-Length: ${str.length}\r\n`
